@@ -1,0 +1,27 @@
+{
+  "name": "mcp-ripgrep",
+  "version": "0.0.1",
+  "description": "An MCP server to wrap ripgrep",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mcollina/mcp-ripgrep.git"
+  },
+  "keywords": [
+    "mcp",
+    "model",
+    "context",
+    "protocol",
+    "ripgrep",
+    "rg"
+  ],
+  "author": "Matteo Collina <hello@matteocollina.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mcollina/mcp-ripgrep/issues"
+  },
+  "homepage": "https://github.com/mcollina/mcp-ripgrep#readme"
+}
