@@ -8,22 +8,8 @@ This server provides a Model Context Protocol (MCP) interface for the powerful [
 
 ## Prerequisites
 
-- Node.js (v16 or higher)
+- Node.js (v18 or higher)
 - ripgrep (`rg`) command installed and available in your PATH. Install it with `brew install ripgrep` on macOS.
-- TypeScript (for development)
-
-## Installation
-
-1. Clone this repository:
-   ```
-   git clone https://github.com/mcollina/mcp-ripgrep.git
-   cd mcp-ripgrep
-   ```
-
-2. Install dependencies and build:
-   ```
-   npm run setup
-   ```
 
 ## Usage with Claude for Desktop
 
