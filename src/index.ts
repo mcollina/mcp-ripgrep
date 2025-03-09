@@ -6,6 +6,23 @@ import { exec as execCallback } from "child_process";
 
 const exec = promisify(execCallback);
 
+/**
+ * Strip ANSI escape sequences from a string to make it human-readable.
+ */
+function stripAnsiEscapeCodes(input: string): string {
+  // This regex matches ANSI escape sequences
+  return input.replace(/\u001b\[[0-9;]*[a-zA-Z]/g, '');
+}
+
+/**
+ * Process the output based on whether colors are requested.
+ * If colors are used, return the original output, otherwise strip ANSI codes.
+ */
+function processOutput(output: string, useColors: boolean): string {
+  if (!output) return output;
+  return useColors ? output : stripAnsiEscapeCodes(output);
+}
+
 // Create an MCP server
 const server = new Server(
   {
@@ -44,7 +61,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             caseSensitive: { type: "boolean", description: "Use case sensitive search (default: auto)" },
             filePattern: { type: "string", description: "Filter by file type or glob" },
             maxResults: { type: "number", description: "Limit the number of matching lines" },
-            context: { type: "number", description: "Show N lines before and after each match" }
+            context: { type: "number", description: "Show N lines before and after each match" },
+            useColors: { type: "boolean", description: "Use colors in output (default: false)" }
           },
           required: ["pattern"]
         }
@@ -68,7 +86,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             includeHidden: { type: "boolean", description: "Search in hidden files and directories" },
             followSymlinks: { type: "boolean", description: "Follow symbolic links" },
             showFilenamesOnly: { type: "boolean", description: "Only show filenames of matches, not content" },
-            showLineNumbers: { type: "boolean", description: "Show line numbers" }
+            showLineNumbers: { type: "boolean", description: "Show line numbers" },
+            useColors: { type: "boolean", description: "Use colors in output (default: false)" }
           },
           required: ["pattern"]
         }
@@ -83,7 +102,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             path: { type: "string", description: "Directory or file(s) to search. Defaults to current directory." },
             caseSensitive: { type: "boolean", description: "Use case sensitive search (default: auto)" },
             filePattern: { type: "string", description: "Filter by file type or glob" },
-            countLines: { type: "boolean", description: "Count matching lines instead of total matches" }
+            countLines: { type: "boolean", description: "Count matching lines instead of total matches" },
+            useColors: { type: "boolean", description: "Use colors in output (default: false)" }
           },
           required: ["pattern"]
         }
@@ -133,6 +153,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
         const filePattern = args.filePattern ? String(args.filePattern) : undefined;
         const maxResults = typeof args.maxResults === 'number' ? args.maxResults : undefined;
         const context = typeof args.context === 'number' ? args.context : undefined;
+        const useColors = typeof args.useColors === 'boolean' ? args.useColors : false;
         
         if (!pattern) {
           return {
@@ -166,8 +187,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
           command += ` -C ${context}`;
         }
         
-        // Add line numbers and colors 
-        command += " -n --color always";
+        // Add line numbers
+        command += " -n";
+        
+        // Add color setting
+        command += useColors ? " --color always" : " --color never";
         
         // Add pattern and path
         command += ` ${escapeShellArg(pattern)} ${escapeShellArg(path)}`;
@@ -184,7 +208,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
           content: [
             {
               type: "text",
-              text: stdout || "No matches found"
+              text: processOutput(stdout, useColors) || "No matches found"
             }
           ]
         };
@@ -205,6 +229,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
         const followSymlinks = typeof args.followSymlinks === 'boolean' ? args.followSymlinks : undefined;
         const showFilenamesOnly = typeof args.showFilenamesOnly === 'boolean' ? args.showFilenamesOnly : undefined;
         const showLineNumbers = typeof args.showLineNumbers === 'boolean' ? args.showLineNumbers : undefined;
+        const useColors = typeof args.useColors === 'boolean' ? args.useColors : false;
         
         if (!pattern) {
           return {
@@ -283,8 +308,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
           command += " -n";
         }
         
-        // Always use colors for better output
-        command += " --color always";
+        // Add color setting
+        command += useColors ? " --color always" : " --color never";
         
         // Add pattern and path
         command += ` ${escapeShellArg(pattern)} ${escapeShellArg(path)}`;
@@ -301,7 +326,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
           content: [
             {
               type: "text",
-              text: stdout || "No matches found"
+              text: processOutput(stdout, useColors) || "No matches found"
             }
           ]
         };
@@ -313,6 +338,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
         const caseSensitive = typeof args.caseSensitive === 'boolean' ? args.caseSensitive : undefined;
         const filePattern = args.filePattern ? String(args.filePattern) : undefined;
         const countLines = typeof args.countLines === 'boolean' ? args.countLines : true;
+        const useColors = typeof args.useColors === 'boolean' ? args.useColors : false;
         
         if (!pattern) {
           return {
@@ -343,6 +369,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
           command += " --count-matches"; // Count total matches
         }
         
+        // Add color setting
+        command += useColors ? " --color always" : " --color never";
+        
         // Add pattern and path
         command += ` ${escapeShellArg(pattern)} ${escapeShellArg(path)}`;
         
@@ -358,7 +387,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
           content: [
             {
               type: "text",
-              text: stdout || "No matches found"
+              text: processOutput(stdout, useColors) || "No matches found"
             }
           ]
         };
@@ -388,6 +417,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
           command += " -."
         }
         
+        // No colors for file listing
+        command += " --color never";
+        
         // Add path
         command += ` ${escapeShellArg(path)}`;
         
@@ -403,14 +435,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
           content: [
             {
               type: "text",
-              text: stdout || "No files found"
+              text: stripAnsiEscapeCodes(stdout) || "No files found"
             }
           ]
         };
       }
       
       case "list-file-types": {
-        const command = "rg --type-list";
+        // No colors for type listing
+        const command = "rg --type-list --color never";
         
         console.error(`Executing: ${command}`);
         const { stdout, stderr } = await exec(command);
@@ -424,7 +457,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
           content: [
             {
               type: "text",
-              text: stdout || "Failed to get file types"
+              text: stripAnsiEscapeCodes(stdout) || "Failed to get file types"
             }
           ]
         };
@@ -456,7 +489,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
       content: [
         {
           type: "text",
-          text: `Error: ${error.message}\n${error.stderr || ""}`
+          text: stripAnsiEscapeCodes(`Error: ${error.message}\n${error.stderr || ""}`)
         }
       ]
     };
