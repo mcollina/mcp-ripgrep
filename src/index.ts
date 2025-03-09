@@ -57,14 +57,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           type: "object",
           properties: {
             pattern: { type: "string", description: "The search pattern (regex by default)" },
-            path: { type: "string", description: "Directory or file(s) to search. Defaults to current directory." },
+            path: { type: "string", description: "Directory or file(s) to search." },
             caseSensitive: { type: "boolean", description: "Use case sensitive search (default: auto)" },
             filePattern: { type: "string", description: "Filter by file type or glob" },
             maxResults: { type: "number", description: "Limit the number of matching lines" },
             context: { type: "number", description: "Show N lines before and after each match" },
             useColors: { type: "boolean", description: "Use colors in output (default: false)" }
           },
-          required: ["pattern"]
+          required: ["pattern", "path"]
         }
       },
       {
@@ -74,7 +74,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           type: "object",
           properties: {
             pattern: { type: "string", description: "The search pattern (regex by default)" },
-            path: { type: "string", description: "Directory or file(s) to search. Defaults to current directory." },
+            path: { type: "string", description: "Directory or file(s) to search." },
             caseSensitive: { type: "boolean", description: "Use case sensitive search (default: auto)" },
             fixedStrings: { type: "boolean", description: "Treat pattern as a literal string, not a regex" },
             filePattern: { type: "string", description: "Filter by file type or glob" },
@@ -89,7 +89,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             showLineNumbers: { type: "boolean", description: "Show line numbers" },
             useColors: { type: "boolean", description: "Use colors in output (default: false)" }
           },
-          required: ["pattern"]
+          required: ["pattern", "path"]
         }
       },
       {
@@ -99,13 +99,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           type: "object",
           properties: {
             pattern: { type: "string", description: "The search pattern (regex by default)" },
-            path: { type: "string", description: "Directory or file(s) to search. Defaults to current directory." },
+            path: { type: "string", description: "Directory or file(s) to search." },
             caseSensitive: { type: "boolean", description: "Use case sensitive search (default: auto)" },
             filePattern: { type: "string", description: "Filter by file type or glob" },
             countLines: { type: "boolean", description: "Count matching lines instead of total matches" },
             useColors: { type: "boolean", description: "Use colors in output (default: false)" }
           },
-          required: ["pattern"]
+          required: ["pattern", "path"]
         }
       },
       {
@@ -114,11 +114,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            path: { type: "string", description: "Directory or file(s) to search. Defaults to current directory." },
+            path: { type: "string", description: "Directory or file(s) to search." },
             filePattern: { type: "string", description: "Filter by file type or glob" },
             fileType: { type: "string", description: "Filter by file type (e.g., js, py)" },
             includeHidden: { type: "boolean", description: "Include hidden files and directories" }
-          }
+          },
+          required: ["path"]
         }
       },
       {
@@ -148,7 +149,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     switch (toolName) {
       case "search": {
         const pattern = String(args.pattern || "");
-        const path = String(args.path || ".");
+        const path = String(args.path);
         const caseSensitive = typeof args.caseSensitive === 'boolean' ? args.caseSensitive : undefined;
         const filePattern = args.filePattern ? String(args.filePattern) : undefined;
         const maxResults = typeof args.maxResults === 'number' ? args.maxResults : undefined;
@@ -216,7 +217,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
       
       case "advanced-search": {
         const pattern = String(args.pattern || "");
-        const path = String(args.path || ".");
+        const path = String(args.path);
         const caseSensitive = typeof args.caseSensitive === 'boolean' ? args.caseSensitive : undefined;
         const fixedStrings = typeof args.fixedStrings === 'boolean' ? args.fixedStrings : undefined;
         const filePattern = args.filePattern ? String(args.filePattern) : undefined;
@@ -334,7 +335,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
       
       case "count-matches": {
         const pattern = String(args.pattern || "");
-        const path = String(args.path || ".");
+        const path = String(args.path);
         const caseSensitive = typeof args.caseSensitive === 'boolean' ? args.caseSensitive : undefined;
         const filePattern = args.filePattern ? String(args.filePattern) : undefined;
         const countLines = typeof args.countLines === 'boolean' ? args.countLines : true;
@@ -394,7 +395,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
       }
       
       case "list-files": {
-        const path = String(args.path || ".");
+        const path = String(args.path);
         const filePattern = args.filePattern ? String(args.filePattern) : undefined;
         const fileType = args.fileType ? String(args.fileType) : undefined;
         const includeHidden = typeof args.includeHidden === 'boolean' ? args.includeHidden : undefined;
