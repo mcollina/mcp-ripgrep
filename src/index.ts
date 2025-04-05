@@ -1,10 +1,7 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { promisify } from "util";
-import { exec as execCallback } from "child_process";
-
-const exec = promisify(execCallback);
+import { spawn } from "node:child_process";
 
 /**
  * Strip ANSI escape sequences from a string to make it human-readable.
@@ -44,6 +41,52 @@ function escapeShellArg(arg: string): string {
   // Replace all single quotes with the sequence: '"'"'
   // This ensures the argument is properly quoted in shell commands
   return `'${arg.replace(/'/g, "'\"'\"'")}'`;
+}
+
+/**
+ * Execute a command with isolated streams to prevent external processes
+ * from interfering with the output.
+ */
+function exec(command: string): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const parts = command.split(" ");
+    const program = parts[0];
+    const args = parts.slice(1).filter(arg => arg.length > 0);
+    
+    // Use spawn with explicit stdio control
+    const child = spawn(program, args, {
+      shell: true, // Use shell to handle quotes and escaping
+    });
+    
+    let stdout = "";
+    let stderr = "";
+    
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    
+    child.stdout.on("data", (data) => {
+      stdout += data;
+    });
+    
+    child.stderr.on("data", (data) => {
+      stderr += data;
+    });
+    
+    child.on("close", (code) => {
+      if (code === 0 || code === 1) { // Code 1 is "no matches" for ripgrep
+        resolve({ stdout, stderr });
+      } else {
+        const error = new Error(`Command failed with exit code ${code}`);
+        Object.assign(error, { code, stdout, stderr });
+        reject(error);
+      }
+    });
+    
+    // Handle process errors
+    child.on("error", (error) => {
+      reject(error);
+    });
+  });
 }
 
 // List available tools
