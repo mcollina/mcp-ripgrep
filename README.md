@@ -1,3 +1,5 @@
+[![MseeP Badge](https://mseep.net/pr/mcollina-mcp-ripgrep-badge.jpg)](https://mseep.ai/app/mcollina-mcp-ripgrep)
+
 # MCP Ripgrep Server
 
 An MCP server that provides ripgrep (rg) search capabilities to any MCP client such as Claude.
