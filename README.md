@@ -1,5 +1,7 @@
 # MCP Ripgrep Server
 
+[![smithery badge](https://smithery.ai/badge/mcp-ripgrep)](https://smithery.ai/server/mcp-ripgrep)
+
 An MCP server that provides ripgrep (rg) search capabilities to any MCP client such as Claude.
 
 ## Overview
