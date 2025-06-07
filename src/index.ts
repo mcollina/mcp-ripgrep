@@ -39,10 +39,15 @@ const server = new Server(
  * This is a basic implementation and should be replaced with a more robust solution in production.
  */
 function escapeShellArg(arg: string): string {
-  // Replace all single quotes with the sequence: '"'"'
-  // This ensures the argument is properly quoted in shell commands
-  return `'${arg.replace(/'/g, "'\"'\"'")}'`;
+  if (process.platform === 'win32') {
+    // This covers ALL Windows versions (32-bit, 64-bit, etc.)
+    return `"${arg.replace(/"/g, '""')}"`;
+  } else {
+    // Unix/Linux/macOS
+    return `'${arg.replace(/'/g, "'\"'\"'")}'`;
+  }
 }
+
 
 /**
  * Execute a command with isolated streams to prevent external processes
